@@ -18,36 +18,37 @@ public static class CacheMan
         if (File.Exists(fileNameUrlString))
         {
             x.Load(fileNameUrlString);
+
+            var cacheTime = x.SelectSingleNode(string.Format("//{0}" , cacheKey));
+            if (cacheTime != null)
+            {
+                DateTime fileCacheTime;
+                if (DateTime.TryParse(cacheTime.InnerText, out fileCacheTime) && fileCacheTime < DateTime.UtcNow)
+                {
+                    System.Diagnostics.Debug.WriteLine("cache out of date.");
+                    x.LoadXml(performQuery(url));
+                    x.Save(fileNameUrlString);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("using old data.");
+                }
+                return x.InnerXml;
+            }
+            else
+            {
+                //no cache key - grab latest - potentially add key a key to the xmlfile for default cachetime if its missing?
+                System.Diagnostics.Debug.WriteLine("cache key doesn't exist.");
+            }
         }
         else
         {
             //we never retrieved this before.
             System.Diagnostics.Debug.WriteLine("cache doesn't exist.");
-            x.LoadXml(performQuery(url));
-            x.Save(fileNameUrlString);
         }
 
-        var cacheTime = x.SelectSingleNode(string.Format("//{0}" , cacheKey));
-        if (cacheTime != null)
-        {
-            DateTime fileCacheTime;
-            if (DateTime.TryParse(cacheTime.InnerText, out fileCacheTime) && fileCacheTime < DateTime.Now)
-            {
-                System.Diagnostics.Debug.WriteLine("cache out of date.");
-                x.LoadXml(performQuery(url));
-                x.Save(fileNameUrlString);
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("using old data.");
-                x.Load(fileNameUrlString);
-            }
-            return x.InnerXml;
-        }
-        else
-        {
-            //no cache key - grab latest - potentially add key for default timeout?
-        }
+        x.LoadXml(performQuery(url));
+        x.Save(fileNameUrlString);
             
         return x.InnerXml;
     }
