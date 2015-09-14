@@ -19,12 +19,19 @@ public static class CacheMan
         {
             x.Load(fileNameUrlString);
         }
+        else
+        {
+            //we never retrieved this before.
+            System.Diagnostics.Debug.WriteLine("cache doesn't exist.");
+            x.LoadXml(performQuery(url));
+            x.Save(fileNameUrlString);
+        }
 
-        var cacheTime = x.SelectSingleNode(string.Format("//{0}" , cacheKey ));
+        var cacheTime = x.SelectSingleNode(string.Format("//{0}" , cacheKey));
         if (cacheTime != null)
         {
-            DateTime ou;
-            if (DateTime.TryParse(cacheTime.InnerText, out ou) && ou < DateTime.Now)
+            DateTime fileCacheTime;
+            if (DateTime.TryParse(cacheTime.InnerText, out fileCacheTime) && fileCacheTime < DateTime.Now)
             {
                 System.Diagnostics.Debug.WriteLine("cache out of date.");
                 x.LoadXml(performQuery(url));
@@ -39,10 +46,7 @@ public static class CacheMan
         }
         else
         {
-            //we never retrieved this before.
-            System.Diagnostics.Debug.WriteLine("cache doesn't exist.");
-            x.LoadXml(performQuery(url));
-            x.Save(fileNameUrlString);
+            //no cache key - grab latest - potentially add key for default timeout?
         }
             
         return x.InnerXml;
